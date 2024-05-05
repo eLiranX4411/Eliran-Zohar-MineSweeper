@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>🍌 MinesJungleSweeper 🍌</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+
+  <body onload="onInit()">
+    <h4>Welcome To</h4>
+    <h1>🍌 MineJungleSweeper 🍌</h1>
+    <p></p>
+
+    <h2><span class="time">0</span></h2>
+    <button class="restart-btn" onclick="onInit()">🐵</button>
+    <h2><span class="mine-count">0</span></h2>
+
+    <table class="board-container">
+      <tbody class="board"></tbody>
+    </table>
+
+    <div class="life-container">Life</div>
+
+    <button class="diff" onclick="onSetLevel({ LEVEL: 'Easy', SIZE: 4 , MINES: 2})">Easy 🙊</button>
+    <button class="diff" onclick="onSetLevel({ LEVEL: 'Medium', SIZE: 8 , MINES: 14})">Medium 🙉</button>
+    <button class="diff" onclick="onSetLevel({ LEVEL: 'Expert', SIZE: 12 , MINES: 32})">Expert 🙈</button>
+
+    <script src="js/utils.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/mines.js"></script>
+    <script src="js/bonus.js"></script>
+
+    <footer>
+      <h4>By Eliran Zohar</h4>
+    </footer>
+  </body>
+</html>

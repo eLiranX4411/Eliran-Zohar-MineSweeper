@@ -1,0 +1,132 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  /* background-image: url('https://img.freepik.com/free-photo/jungle-landscape-digital-art-illustration_23-2151403431.jpg?t=st=1714830750~exp=1714834350~hmac=48fd491c31f0da99515409ff5b5188d57dae04bb3e9ba5d24188bec72781b3dd&w=1800'); */
+  background-image: url('https://img.freepik.com/free-photo/8-bit-graphics-pixels-scene-with-nature_23-2151120965.jpg?t=st=1714830967~exp=1714834567~hmac=ba4e7f26890c5b596407f2895aa4d3bad682a79f72de378148de9b309d3f17dd&w=1380');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: #76c893;
+  text-align: center;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+h4 {
+  color: wheat;
+  font-size: 20px;
+  letter-spacing: 10px;
+  margin-bottom: 30px;
+
+  -webkit-text-stroke: 1px black;
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+h1 {
+  font-size: 50px;
+  color: #8b4513;
+  margin-top: -20px;
+
+  -webkit-text-stroke: 1px black;
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.board-container {
+  margin: 40px auto;
+  border: solid 4px #8b4513;
+  border-radius: 0px 20px;
+  background-color: #bc8f8f;
+  padding: 10px;
+}
+
+.cell {
+  font-size: 15px;
+
+  width: 40px;
+  height: 40px;
+  background-color: #7cfc00;
+  border: solid 2px #8b4513;
+  cursor: pointer;
+}
+
+.cell:active {
+  background-color: #76c893;
+}
+
+h2,
+.time {
+  display: inline;
+  margin: 0 10px;
+
+  background-color: #a769329d;
+  border: solid #8b4513 3px;
+  border-radius: 700px;
+  color: white;
+  padding: 10px 10px;
+  cursor: not-allowed;
+  margin-top: 20px;
+}
+
+h2,
+.mine-count {
+  display: inline;
+  margin: 0 10px;
+
+  background-color: #a76932;
+  border: solid #8b4513 3px;
+  border-radius: 700px;
+  color: white;
+  padding: 10px 10px;
+  cursor: not-allowed;
+  margin-top: 20px;
+}
+
+.restart-btn {
+  font-size: 50px;
+  background-color: #76c89300;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: 300ms;
+}
+
+.diff {
+  background-color: #f4a460;
+  color: white;
+
+  border: solid #8b4513 3px;
+  border-radius: 700px;
+
+  font-size: 16px;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+
+  cursor: pointer;
+  padding: 10px 20px;
+  margin: 10px;
+  transition: 300ms;
+}
+
+.diff:hover {
+  background-color: #d2691e;
+}
+
+.diff:active {
+  background-color: #603b21;
+}
+
+.selected {
+  background-color: #6bc089;
+}
+
+.selected2 {
+  background-color: yellow;
+}
+
+footer {
+  background-color: #685918;
+  width: 300px;
+  border-radius: 0 60px;
+  margin: auto;
+  cursor: crosshair;
+}
