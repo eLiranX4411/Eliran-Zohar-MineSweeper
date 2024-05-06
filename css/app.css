@@ -123,10 +123,23 @@ h2,
   background-color: yellow;
 }
 
+.marked {
+  background-color: rgb(89, 194, 255);
+}
+
+.clean-container {
+  background-color: red;
+}
+
+.win-container {
+  background-color: yellow;
+}
+
 footer {
-  background-color: #685918;
-  width: 300px;
+  background-color: #a76932;
+  width: 400px;
   border-radius: 0 60px;
+  border: solid black 3px;
   margin: auto;
   cursor: crosshair;
 }

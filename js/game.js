@@ -14,6 +14,7 @@ var gBoard = {
   isShown: false,
   isMine: false,
   isMarked: false,
+  isFirstClick: true,
 }
 
 var gLevel = {
@@ -31,60 +32,22 @@ var gGame = {
 
 var gGameBoard
 var gCellContent
+var gElTable = document.querySelector('.board-container')
 
 function onInit() {
+  gGame.shownCount = 0
+
   gGame.isOn = true
 
   gGameBoard = buildBoard()
 
   onSetLevel(gLevel)
 
+  gElTable.classList.remove('win-container')
+
   setMinesNegsCount(gGameBoard)
 
   renderBoard(gGameBoard)
-}
-
-function addMine() {
-  var emptyMineCell = getEmptyMinesCell(gGameBoard)
-  if (emptyMineCell === null) return
-
-  gGameBoard[emptyMineCell.row][emptyMineCell.col].isMine = true
-
-  renderCell(emptyMineCell, MINE)
-}
-
-function getEmptyMinesCell(board) {
-  const emptyCells = []
-
-  for (var i = 0; i < board.length; i++) {
-    for (var j = 0; j < board[i].length; j++) {
-      var cell = board[i][j]
-      if (!cell.isMine) {
-        emptyCells.push({ row: i, col: j }) // Push to all the board that isMine = false
-      }
-    }
-  }
-
-  // Random select gLevel.MINES number of cells from the emptyCells array
-  // console.log(emptyCells)
-  const mineCells = []
-
-  for (var k = 0; k < gLevel.MINES; k++) {
-    var randomIdx = Math.floor(Math.random() * emptyCells.length)
-    mineCells.push(emptyCells[randomIdx])
-    emptyCells.splice(randomIdx, 1) // Remove the random cell from emptyCells accroding the gLevel.Mines num
-  }
-  // console.log(emptyCells)
-
-  for (var l = 0; l < mineCells.length; l++) {
-    var mineCell = mineCells[l]
-    board[mineCell.row][mineCell.col].isMine = true // Make the cutted cells .isMine True
-    // console.log(mineCells[l])
-  }
-
-  console.log(mineCells)
-  if (!emptyCells.length) return null
-  return emptyCells[getRandomIntInclusive(0, emptyCells.length - 1)]
 }
 
 function buildBoard() {
@@ -98,26 +61,6 @@ function buildBoard() {
   return board
 }
 
-function onCellClicked(elCell, i, j) {
-  var cell = gGameBoard[i][j]
-  cell.isShown = true
-
-  if (cell.isMine) {
-    gCellContent = MINE
-
-    elCell.innerHTML = MINE
-    elCell.classList.add('selected2')
-
-    alert('Boom!')
-  } else {
-    gCellContent = cell.minesAroundCount
-
-    elCell.innerHTML = cell.minesAroundCount
-  }
-
-  elCell.classList.add('selected')
-}
-
 function renderBoard(board) {
   var strHTML = ''
 
@@ -125,18 +68,87 @@ function renderBoard(board) {
     strHTML += '<tr>'
 
     for (var j = 0; j < gLevel.SIZE; j++) {
-      const cell = board[i][j]
+      // const cell = board[i][j]
 
-      // gCellContent = cell.isMine ? MINE : countNegMines(board, i, j)
-      // if (gCellContent === 0) gCellContent = EMPTY
       gCellContent = EMPTY
       const className = `cell-${i}-${j}`
-      strHTML += `<td class="cell ${className}" onclick="onCellClicked(this, ${i}, ${j})">${gCellContent}</td>`
+      strHTML += `<td class="cell ${className}" oncontextmenu="return onCellMarked(event, ${i}, ${j})" onclick="onCellClicked(this, ${i}, ${j})">${gCellContent}</td>`
     }
     strHTML += '</tr>'
   }
   const elBoard = document.querySelector('.board')
   elBoard.innerHTML = strHTML
+}
+
+function onSetLevel(level) {
+  gLevel = level
+
+  var elMinesCounter = document.querySelector('.mine-count')
+  elMinesCounter.innerText = gLevel.MINES
+
+  gGameBoard = buildBoard()
+  addMines(gGameBoard)
+  setMinesNegsCount(gGameBoard)
+
+  gGame.isOn = true
+  gElTable.classList.remove('clean-container')
+
+  renderBoard(gGameBoard)
+}
+
+function onCellClicked(elCell, i, j) {
+  var cell = gGameBoard[i][j]
+  if (!gGame.isOn) return
+
+  if (cell.isMine) {
+    gCellContent = MINE
+    cell.isShown = true
+
+    elCell.innerHTML = MINE
+    elCell.classList.add('selected2')
+
+    gGame.isOn = false
+    gElTable.classList.add('clean-container')
+    alert('You Lose...')
+  } else if (!cell.isShown && !cell.isMarked && !cell.isMine) {
+    cell.isShown = true
+    gGame.shownCount++
+
+    gCellContent = cell.minesAroundCount
+    elCell.innerHTML = cell.minesAroundCount
+    elCell.classList.add('selected')
+  }
+
+  if (gGame.shownCount === gLevel.SIZE * gLevel.SIZE) {
+    gElTable.classList.add('win-container')
+    alert('You Win The Game!!!')
+    alert('Click On The Monkey To RESET!')
+    gGame.isOn = false
+  }
+}
+
+function onCellMarked(event, i, j) {
+  event.preventDefault()
+  var elCell = event.target
+  var cell = gGameBoard[i][j]
+
+  if (cell.isShown && cell.isMine) return
+
+  if (cell.isMine) {
+    cell.isMine = false
+    console.log('Mark a Bomb')
+  }
+
+  if (!cell.isShown) {
+    cell.isMarked = true
+    gGame.markedCount++
+    gGame.shownCount++
+
+    elCell.innerHTML = MARK
+    elCell.classList.add('marked')
+  }
+
+  return false
 }
 
 // Neg Overall Count
@@ -174,28 +186,64 @@ function countNegMines(board, row, col) {
   return minesCounter
 }
 
-function onCellMarked(elCell) {}
+function addMines(board) {
+  var emptyMineCell = getEmptyMinesCells(gGameBoard)
+  if (emptyMineCell === null) return
+  const mineCells = []
+
+  for (var i = 0; i < gLevel.MINES; i++) {
+    var randomIdx = Math.floor(Math.random() * emptyMineCell.length)
+    mineCells.push(emptyMineCell[randomIdx])
+    emptyMineCell.splice(randomIdx, 1) // Remove the random cell from emptyCells accroding the gLevel.Mines num
+  }
+
+  for (var j = 0; j < mineCells.length; j++) {
+    var mineCell = mineCells[j]
+    board[mineCell.row][mineCell.col].isMine = true // Make the cutted cells .isMine True
+  }
+  console.log(mineCells)
+  return emptyMineCell[getRandomIntInclusive(0, emptyMineCell.length - 1)]
+}
+
+function getEmptyMinesCells(board) {
+  const emptyCells = []
+
+  for (var i = 0; i < board.length; i++) {
+    for (var j = 0; j < board[i].length; j++) {
+      var cell = board[i][j]
+      if (!cell.isMine) {
+        emptyCells.push({ row: i, col: j }) // Push to all the board that isMine = false
+      }
+    }
+  }
+  if (!emptyCells.length) return null
+  return emptyCells
+}
 
 function checkGameOver() {}
 
 function expandShown(board, elCell, i, j) {}
 
-function onSetLevel(level) {
-  gLevel = level
-
-  var elMinesCounter = document.querySelector('.mine-count')
-  elMinesCounter.innerText = gLevel.MINES
-
-  gGameBoard = buildBoard()
-  getEmptyMinesCell(gGameBoard)
-  renderBoard(gGameBoard)
-}
-
-function renderCell(location, value) {
-  const elCell = document.querySelector(`.cell-${location.i}-${location.j}`)
-  elCell.innerHTML = value
-}
+// ------------------------------------------------------
 
 function getRandomIntInclusive(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
+
+/*
+  // Random select gLevel.MINES number of cells from the emptyCells array
+  // const mineCells = []
+
+  // for (var k = 0; k < gLevel.MINES; k++) {
+  //   var randomIdx = Math.floor(Math.random() * emptyCells.length)
+  //   mineCells.push(emptyCells[randomIdx])
+  //   emptyCells.splice(randomIdx, 1) // Remove the random cell from emptyCells accroding the gLevel.Mines num
+  // }
+
+  // for (var l = 0; l < mineCells.length; l++) {
+  //   var mineCell = mineCells[l]
+  //   board[mineCell.row][mineCell.col].isMine = true // Make the cutted cells .isMine True
+  // }
+    // return emptyCells[getRandomIntInclusive(0, emptyCells.length - 1)]
+
+*/
