@@ -3,11 +3,30 @@
 const RESET = '🐵'
 const WIN = '🙊'
 const LOSE = '🙉'
+const SAFE = '🐒'
 
 const EMPTY = ' '
 const MINE = '💣'
 const MARK = '🍌'
 const LIFE = '🐒'
+
+var gElTable = document.querySelector('.board-container')
+var gElResetBtn = document.querySelector('.restart-btn')
+var gElLifeContainer = document.querySelector('.life-container')
+var gElRulesContainer = document.querySelector('.rules-container')
+var gElRulesContainerBtn = document.querySelector('.rules-btn')
+var gElMinutesContainer = document.querySelector('.min')
+var gElSecondContainer = document.querySelector('.sec')
+var gElSafeClickContainer = document.querySelector('.safe-click-container')
+
+var gGameBoard
+var gCellContent
+var gIntervalId
+var gSafeClickCooldown
+var gCounts = 0
+var isFirstClick = true
+var gLifes = []
+var gAudio = new Audio('sounds/SOUND_BY_ELIRAN_ZOHAR.wav')
 
 var gBoard = {
   minesAroundCount: 0,
@@ -28,61 +47,94 @@ var gGame = {
   isOn: false,
   shownCount: 0,
   markedCount: 0,
-  // How many seconds passed
   secsPassed: 0,
+  safeClicks: 3,
 }
-
-var gGameBoard
-var gCellContent
-
-var gElTable = document.querySelector('.board-container')
-var gElResetBtn = document.querySelector('.restart-btn')
-var gElLifeContainer = document.querySelector('.life-container')
-var gElRulesContainer = document.querySelector('.rules-container')
-var gElRulesContainerBtn = document.querySelector('.rules-btn')
-
-var gIntervalId
-var gCounts = 0
-var isFirstClick = true
-var gLifes = []
-// var gElTdMines = document.querySelector('.board')
 
 function startGame() {
   gElRulesContainer.innerHTML = ''
   gElRulesContainer.classList.remove('rules-container')
   gElRulesContainerBtn.innerHTML = ''
-  gGame.isOn = true
+}
+
+playSoundBackGround()
+function playSoundBackGround() {
+  if (gAudio && !gAudio.paused) {
+    return
+  }
+
+  if (gAudio) {
+    gAudio.pause()
+    gAudio.currentTime = 0
+  }
+
+  gAudio = new Audio('sounds/SOUND_BY_ELIRAN_ZOHAR.wav')
+  gAudio.volume = 0.2
+  gAudio.loop = true
+  gAudio.play()
+}
+
+function playStart() {
+  var audio = new Audio('sounds/START.wav')
+  audio.volume = 0.3
+  audio.play()
+}
+
+function playHit() {
+  var audio = new Audio('sounds/HIT.wav')
+  audio.volume = 0.3
+  audio.play()
+}
+
+function playMine() {
+  var audio = new Audio('sounds/MINE.wav')
+  audio.volume = 0.3
+  audio.play()
+}
+
+function playLose() {
+  var audio = new Audio('sounds/LOSE.wav')
+  audio.volume = 0.5
+  audio.play()
+}
+
+function playWin() {
+  var audio = new Audio('sounds/WIN.wav')
+  audio.volume = 0.5
+  audio.play()
 }
 
 function onInit() {
-  gLifes = [LIFE, LIFE, LIFE]
+  playSoundBackGround()
 
-  gLevel.LIFES = 3
-
-  gGame.shownCount = 0
-
-  gGame.markedCount = 0
-
-  gCounts = 0
-
-  gGame.isOn = true
-
-  isFirstClick = true
+  playStart()
 
   gGameBoard = buildBoard()
 
   onSetLevel(gLevel)
 
+  gLevel.LIFES = 3
+  gLifes = [LIFE, LIFE, LIFE]
+  gElLifeContainer.innerHTML = gLifes
+
+  gGame.shownCount = 0
+  gGame.markedCount = 0
+  gGame.secsPassed = 0
+  gGame.safeClicks = 3
+  gGame.BMARK = 2
+
+  gCounts = 0
+  gGame.isOn = true
+
+  isFirstClick = true
+
   gElTable.classList.remove('win-container')
-
+  gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
   gElResetBtn.innerHTML = RESET
-
   gElLifeContainer.innerHTML = gLifes
 
   setMinesNegsCount(gGameBoard)
-
-  startTimer()
-
+  endTimer()
   renderBoard(gGameBoard)
 }
 
@@ -107,6 +159,7 @@ function renderBoard(board) {
       // const cell = board[i][j]
 
       gCellContent = EMPTY
+
       const className = `cell-${i}-${j}`
       strHTML += `<td class="cell ${className}" oncontextmenu="return onCellMarked(event, ${i}, ${j})" onclick="onCellClicked(this, ${i}, ${j})">${gCellContent}</td>`
     }
@@ -118,7 +171,6 @@ function renderBoard(board) {
 
 function onSetLevel(level) {
   gLevel = level
-
   var elMinesCounter = document.querySelector('.mine-count')
   elMinesCounter.innerText = gLevel.MINES
 
@@ -131,8 +183,15 @@ function onSetLevel(level) {
   gElTable.classList.remove('win-container')
   gElResetBtn.innerHTML = RESET
 
-  gElLifeContainer.innerHTML = gLifes
   gLevel.LIFES = 3
+  gLifes = [LIFE, LIFE, LIFE]
+  gElLifeContainer.innerHTML = gLifes
+
+  gGame.BMARK = gGame.BMARK
+  gGame.secsPassed = 0
+  gGame.safeClicks = 3
+  gGame.shownCount = 0
+  gGame.markedCount = 0
 
   renderBoard(gGameBoard)
 }
@@ -144,13 +203,60 @@ function createNewMine() {
     var selectedCell = emptyCell[randomIdx]
 
     gGameBoard[selectedCell.row][selectedCell.col].isMine = true
-    console.log('New mine created at:', selectedCell)
+    // console.log('New mine created at:', selectedCell)
   }
+}
+
+function safeClick() {
+  if (gGame.safeClicks === 0) {
+    gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+    return
+  }
+
+  if (gSafeClickCooldown) {
+    return
+  }
+
+  gSafeClickCooldown = true
+
+  gGame.safeClicks--
+  gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+
+  var marked = false
+
+  for (var i = 0; i < gGameBoard.length; i++) {
+    for (var j = 0; j < gGameBoard[i].length; j++) {
+      var cell = gGameBoard[i][j]
+
+      if (!cell.isMine && !cell.isShown && !marked) {
+        var elCell = document.querySelector(`.cell-${i}-${j}`)
+
+        elCell.innerHTML = SAFE
+        elCell.classList.add('selected-safe')
+        marked = true
+
+        setTimeout(() => {
+          elCell.innerHTML = EMPTY
+          elCell.classList.remove('selected-safe')
+          marked = false
+        }, 500)
+      }
+    }
+  }
+  setTimeout(() => {
+    gSafeClickCooldown = false
+  }, 3000)
 }
 
 function onCellClicked(elCell, i, j) {
   var cell = gGameBoard[i][j]
   if (!gGame.isOn) return
+
+  playHit()
+
+  if (isFirstClick) {
+    startTimer()
+  }
 
   if (isFirstClick && cell.isMine) {
     cell.isMine = false
@@ -161,13 +267,16 @@ function onCellClicked(elCell, i, j) {
   isFirstClick = false
 
   if (cell.isMine) {
+    if (cell.isMine === cell.isShown) {
+      return
+    }
+    playMine()
     gCellContent = MINE
     cell.isShown = true
 
     gLevel.LIFES--
     gCounts++
     gLifes.pop()
-    console.log(gLifes)
     gElLifeContainer.innerHTML = gLifes
 
     elCell.innerHTML = MINE
@@ -179,6 +288,7 @@ function onCellClicked(elCell, i, j) {
 
       gElTable.classList.add('lose-container')
       gElResetBtn.innerHTML = LOSE
+      playLose()
       endTimer()
 
       alert('You Lose...')
@@ -186,20 +296,13 @@ function onCellClicked(elCell, i, j) {
     }
   } else if (!cell.isShown && !cell.isMarked && !cell.isMine) {
     expandShown(gGameBoard, elCell, i, j)
-
-    // cell.isShown = true
-    // gGame.shownCount++
-    // gCounts++
-
-    // gCellContent = cell.minesAroundCount
-    // elCell.innerHTML = cell.minesAroundCount
-    // elCell.classList.add('selected')
   }
 
   if (gCounts === gLevel.SIZE * gLevel.SIZE) {
     gElTable.classList.add('win-container')
     gElResetBtn.innerHTML = WIN
 
+    playWin()
     alert('You Won!')
     alert('Click On The Monkey To RESET!')
 
@@ -247,10 +350,20 @@ function onCellMarked(event, i, j) {
     elCell.innerHTML = MARK
     elCell.classList.add('marked')
   } else {
-    alert('You Use all the mark you have + Bonuses...')
     return
   }
 
+  if (gCounts === gLevel.SIZE * gLevel.SIZE) {
+    gElTable.classList.add('win-container')
+    gElResetBtn.innerHTML = WIN
+
+    alert('You Won!')
+    alert('Click On The Monkey To RESET!')
+
+    endTimer()
+    playWin()
+    gGame.isOn = false
+  }
   return false
 }
 
@@ -263,7 +376,12 @@ function setMinesNegsCount(board) {
       if (board[i][j].isMine) continue
 
       var mineCount = countNegMines(board, i, j)
-      board[i][j].minesAroundCount = mineCount
+      if (board[i][j].minesAroundCount !== mineCount) {
+        board[i][j].minesAroundCount = mineCount
+      }
+      if (mineCount === 0 && board[i][j].minesAroundCount === 0) {
+        board[i][j].minesAroundCount = EMPTY
+      }
       counter += mineCount
     }
   }
@@ -276,7 +394,7 @@ function expandShown(board, elCell, i, j) {
       if (row >= 0 && row < board.length && col >= 0 && col < board[0].length) {
         const currCell = board[row][col]
 
-        if (!currCell.isMine && !currCell.isShown) {
+        if (!currCell.isMine && !currCell.isShown && !currCell.isMarked) {
           currCell.isShown = true
           gGame.shownCount++
           gCounts++
@@ -284,6 +402,9 @@ function expandShown(board, elCell, i, j) {
           const elNeighbor = document.querySelector(`.cell-${row}-${col}`)
           elNeighbor.innerHTML = currCell.minesAroundCount
           elNeighbor.classList.add('selected')
+          if (currCell.minesAroundCount === 0) {
+            expandShown(board, elNeighbor, row, col)
+          }
         }
       }
     }
@@ -323,7 +444,6 @@ function addMines(board) {
     var mineCell = mineCells[j]
     board[mineCell.row][mineCell.col].isMine = true // Make the cutted cells .isMine True
   }
-  console.log(mineCells)
   return emptyMineCell[getRandomIntInclusive(0, emptyMineCell.length - 1)]
 }
 
@@ -343,8 +463,6 @@ function getEmptyMinesCells(board) {
 }
 
 function startTimer() {
-  var elMinutesContainer = document.querySelector('.min')
-  var elSecondContainer = document.querySelector('.sec')
   var startTime = Date.now()
 
   gIntervalId = setInterval(() => {
@@ -352,13 +470,16 @@ function startTimer() {
     var minutes = Math.floor(elapsedSeconds / 60)
     var seconds = elapsedSeconds % 60
 
-    elMinutesContainer.innerText = minutes
-    elSecondContainer.innerText = seconds
-  }, 1000)
+    gElMinutesContainer.innerText = minutes
+    gElSecondContainer.innerText = seconds
+    gGame.secsPassed++
+  }, 100)
 }
 
 function endTimer() {
   clearInterval(gIntervalId)
+  gElMinutesContainer.innerText = 0
+  gElSecondContainer.innerText = 0
 }
 
 // ------------------------------------------------------
