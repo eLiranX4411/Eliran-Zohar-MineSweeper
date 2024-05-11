@@ -9,10 +9,12 @@ const EMPTY = ' '
 const MINE = '💣'
 const MARK = '🍌'
 const LIFE = '🐒'
+const HINT = '🔦'
 
 var gElTable = document.querySelector('.board-container')
 var gElResetBtn = document.querySelector('.restart-btn')
 var gElLifeContainer = document.querySelector('.life-container')
+var gElHintContainer = document.querySelector('.hint-container')
 var gElRulesContainer = document.querySelector('.rules-container')
 var gElRulesContainerBtn = document.querySelector('.rules-btn')
 var gElMinutesContainer = document.querySelector('.min')
@@ -23,9 +25,11 @@ var gGameBoard
 var gCellContent
 var gIntervalId
 var gSafeClickCooldown
+var gHintsCooldown
 var gCounts = 0
 var isFirstClick = true
 var gLifes = []
+var gHints = []
 var gAudio = new Audio('sounds/SOUND_BY_ELIRAN_ZOHAR.wav')
 
 var gBoard = {
@@ -41,6 +45,7 @@ var gLevel = {
   MINES: 2,
   BMARK: 2,
   LIFES: 3,
+  HINTS: 3,
 }
 
 var gGame = {
@@ -111,16 +116,39 @@ function onInit() {
 
   gGameBoard = buildBoard()
 
-  onSetLevel(gLevel)
+  if (gLevel.LEVEL === 'Easy') {
+    gLevel.LIFES = 2
+    gLifes = [LIFE, LIFE]
+    gElLifeContainer.innerHTML = gLifes
+  } else {
+    gLevel.LIFES = 3
+    gLifes = [LIFE, LIFE, LIFE]
+    gElLifeContainer.innerHTML = gLifes
+  }
 
-  gLevel.LIFES = 3
-  gLifes = [LIFE, LIFE, LIFE]
-  gElLifeContainer.innerHTML = gLifes
+  if (gLevel.LEVEL === 'Easy') {
+    gLevel.HINTS = 1
+    gHints = [HINT]
+    gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+  } else {
+    gLevel.HINTS = 3
+    gHints = [HINT, HINT, HINT]
+    gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+  }
+
+  if (gLevel.LEVEL === 'Easy') {
+    gGame.safeClicks = 1
+    gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+  } else {
+    gGame.safeClicks = 3
+    gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+  }
+
+  onSetLevel(gLevel)
 
   gGame.shownCount = 0
   gGame.markedCount = 0
   gGame.secsPassed = 0
-  gGame.safeClicks = 3
   gGame.BMARK = 2
 
   gCounts = 0
@@ -183,13 +211,38 @@ function onSetLevel(level) {
   gElTable.classList.remove('win-container')
   gElResetBtn.innerHTML = RESET
 
-  gLevel.LIFES = 3
-  gLifes = [LIFE, LIFE, LIFE]
-  gElLifeContainer.innerHTML = gLifes
+  if (gLevel.LEVEL === 'Easy') {
+    gLevel.LIFES = 2
+    gLifes = [LIFE, LIFE]
+    gElLifeContainer.innerHTML = gLifes
+  } else {
+    gLevel.LIFES = 3
+    gLifes = [LIFE, LIFE, LIFE]
+    gElLifeContainer.innerHTML = gLifes
+  }
+
+  if (gLevel.LEVEL === 'Easy') {
+    gLevel.HINTS = 1
+    gHints = [HINT]
+    gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+  } else {
+    gLevel.HINTS = 3
+    gHints = [HINT, HINT, HINT]
+    gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+  }
+
+  if (gLevel.LEVEL === 'Easy') {
+    gGame.safeClicks = 1
+    gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+  } else {
+    gGame.safeClicks = 3
+    gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+  }
 
   gGame.BMARK = gGame.BMARK
   gGame.secsPassed = 0
-  gGame.safeClicks = 3
+  gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+
   gGame.shownCount = 0
   gGame.markedCount = 0
 
@@ -207,9 +260,61 @@ function createNewMine() {
   }
 }
 
+function onHintMine() {
+  if (gLevel.HINTS === 0) {
+    gElHintContainer.innerHTML = `No More Hints..`
+    return
+  }
+
+  if (!gGame.isOn) {
+    return
+  }
+
+  if (gHintsCooldown) {
+    return
+  }
+
+  gHintsCooldown = true
+
+  gLevel.HINTS--
+  gHints.pop()
+  gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+
+  var marked = false
+
+  for (var i = 0; i < gGameBoard.length; i++) {
+    for (var j = 0; j < gGameBoard[i].length; j++) {
+      var cell = gGameBoard[i][j]
+
+      if (cell.isMine === true && !cell.isShown && !marked && !cell.isMarked) {
+        var elCell = document.querySelector(`.cell-${i}-${j}`)
+
+        elCell.innerHTML = MINE
+        elCell.classList.add('selected-hint')
+        marked = true
+
+        setTimeout(() => {
+          elCell.innerHTML = EMPTY
+          elCell.classList.remove('selected-hint')
+          marked = false
+        }, 1000)
+      }
+    }
+  }
+  setTimeout(() => {
+    gHintsCooldown = false
+  }, 3000)
+
+  return
+}
+
 function safeClick() {
   if (gGame.safeClicks === 0) {
-    gElSafeClickContainer.innerText = `${gGame.safeClicks} Safe Click`
+    gElSafeClickContainer.innerText = `No More Safe Clicks..`
+    return
+  }
+
+  if (gGame.isOn === false) {
     return
   }
 
@@ -228,7 +333,7 @@ function safeClick() {
     for (var j = 0; j < gGameBoard[i].length; j++) {
       var cell = gGameBoard[i][j]
 
-      if (!cell.isMine && !cell.isShown && !marked) {
+      if (!cell.isMine && !cell.isShown && !marked && !cell.isMarked) {
         var elCell = document.querySelector(`.cell-${i}-${j}`)
 
         elCell.innerHTML = SAFE
@@ -275,7 +380,6 @@ function onCellClicked(elCell, i, j) {
     cell.isShown = true
 
     gLevel.LIFES--
-    gCounts++
     gLifes.pop()
     gElLifeContainer.innerHTML = gLifes
 

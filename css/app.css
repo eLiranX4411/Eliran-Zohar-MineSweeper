@@ -167,11 +167,40 @@ h2,
   font-size: 25px;
 
   margin: auto;
-  margin-top: -35px;
+  margin-top: -30px;
   margin-bottom: 30px;
 
   border: solid 4px #8b4513;
   border-radius: 20px 0px;
+}
+
+.hint-container {
+  display: inline;
+  background-color: #6f5912;
+  color: white;
+
+  border: solid #8b4513 3px;
+  border-radius: 700px;
+
+  font-size: 17px;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+
+  cursor: pointer;
+  padding: 10px 20px;
+  margin: 10px;
+  transition: 300ms;
+}
+
+.hint-container:hover {
+  background-color: #57460e;
+}
+
+.hint-container:active {
+  background-color: #4c3d0d;
+}
+
+.selected-hint {
+  background-color: #923300;
 }
 
 .safe-click-container {
