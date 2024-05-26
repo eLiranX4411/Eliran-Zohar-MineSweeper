@@ -31,6 +31,7 @@ var isFirstClick = true
 var gLifes = []
 var gHints = []
 var gAudio = new Audio('sounds/SOUND_BY_ELIRAN_ZOHAR.wav')
+var gGameCounter = 0
 
 var gBoard = {
   minesAroundCount: 0,
@@ -56,57 +57,12 @@ var gGame = {
   safeClicks: 3,
 }
 
-function startGame() {
+function rulesStartGame() {
+  gGame.isOn = true
+  gGameCounter = 1
   gElRulesContainer.innerHTML = ''
   gElRulesContainer.classList.remove('rules-container')
   gElRulesContainerBtn.innerHTML = ''
-}
-
-playSoundBackGround()
-function playSoundBackGround() {
-  if (gAudio && !gAudio.paused) {
-    return
-  }
-
-  if (gAudio) {
-    gAudio.pause()
-    gAudio.currentTime = 0
-  }
-
-  gAudio = new Audio('sounds/SOUND_BY_ELIRAN_ZOHAR.wav')
-  gAudio.volume = 0.2
-  gAudio.loop = true
-  gAudio.play()
-}
-
-function playStart() {
-  var audio = new Audio('sounds/START.wav')
-  audio.volume = 0.3
-  audio.play()
-}
-
-function playHit() {
-  var audio = new Audio('sounds/HIT.wav')
-  audio.volume = 0.3
-  audio.play()
-}
-
-function playMine() {
-  var audio = new Audio('sounds/MINE.wav')
-  audio.volume = 0.3
-  audio.play()
-}
-
-function playLose() {
-  var audio = new Audio('sounds/LOSE.wav')
-  audio.volume = 0.5
-  audio.play()
-}
-
-function playWin() {
-  var audio = new Audio('sounds/WIN.wav')
-  audio.volume = 0.5
-  audio.play()
 }
 
 function onInit() {
@@ -127,9 +83,9 @@ function onInit() {
   }
 
   if (gLevel.LEVEL === 'Easy') {
-    gLevel.HINTS = 1
-    gHints = [HINT]
-    gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+    gLevel.HINTS = 0
+    gHints = []
+    gElHintContainer.innerHTML = `No Hints in This Level...`
   } else {
     gLevel.HINTS = 3
     gHints = [HINT, HINT, HINT]
@@ -150,9 +106,14 @@ function onInit() {
   gGame.markedCount = 0
   gGame.secsPassed = 0
   gGame.BMARK = 2
+  gCounts = 0
 
   gCounts = 0
-  gGame.isOn = true
+  if (gGameCounter === 1) {
+    gGame.isOn = true // - Gamesistrue
+  } else {
+    gGame.isOn = false // - Gamesistrue
+  }
 
   isFirstClick = true
 
@@ -206,7 +167,12 @@ function onSetLevel(level) {
   addMines(gGameBoard)
   setMinesNegsCount(gGameBoard)
 
-  gGame.isOn = true
+  if (gGameCounter === 1) {
+    gGame.isOn = true // - Gamesistrue
+  } else {
+    gGame.isOn = false // - Gamesistrue
+  }
+
   gElTable.classList.remove('lose-container')
   gElTable.classList.remove('win-container')
   gElResetBtn.innerHTML = RESET
@@ -222,9 +188,9 @@ function onSetLevel(level) {
   }
 
   if (gLevel.LEVEL === 'Easy') {
-    gLevel.HINTS = 1
-    gHints = [HINT]
-    gElHintContainer.innerHTML = `Mine Hint: ${gHints}`
+    gLevel.HINTS = 0
+    gHints = []
+    gElHintContainer.innerHTML = `No Hints in This Level...`
   } else {
     gLevel.HINTS = 3
     gHints = [HINT, HINT, HINT]
@@ -245,6 +211,7 @@ function onSetLevel(level) {
 
   gGame.shownCount = 0
   gGame.markedCount = 0
+  gCounts = 0
 
   renderBoard(gGameBoard)
 }
@@ -357,6 +324,9 @@ function onCellClicked(elCell, i, j) {
   var cell = gGameBoard[i][j]
   if (!gGame.isOn) return
 
+  // console.table(gGameBoard)
+  // console.log(cell)
+
   playHit()
 
   if (isFirstClick) {
@@ -371,6 +341,8 @@ function onCellClicked(elCell, i, j) {
 
   isFirstClick = false
 
+  if (cell.isMarked) return
+
   if (cell.isMine) {
     if (cell.isMine === cell.isShown) {
       return
@@ -384,7 +356,7 @@ function onCellClicked(elCell, i, j) {
     gElLifeContainer.innerHTML = gLifes
 
     elCell.innerHTML = MINE
-    elCell.classList.add('selected2')
+    elCell.classList.add('mine')
 
     if (gLevel.LIFES === 0 && gLifes.length === 0) {
       revealMines()
@@ -399,7 +371,14 @@ function onCellClicked(elCell, i, j) {
       alert('Click On The Monkey To RESET!')
     }
   } else if (!cell.isShown && !cell.isMarked && !cell.isMine) {
-    expandShown(gGameBoard, elCell, i, j)
+    cell.isShown = true
+    gCounts++
+    elCell.classList.add('selected')
+    elCell.innerHTML = cell.minesAroundCount
+
+    if (cell.minesAroundCount === 0) {
+      expandShown(gGameBoard, elCell, i, j)
+    }
   }
 
   if (gCounts === gLevel.SIZE * gLevel.SIZE) {
@@ -413,6 +392,7 @@ function onCellClicked(elCell, i, j) {
     endTimer()
     gGame.isOn = false
   }
+  console.log('gCounts Click:', gCounts)
 }
 
 function revealMines() {
@@ -424,7 +404,7 @@ function revealMines() {
         var elCell = document.querySelector(`.cell-${i}-${j}`)
 
         elCell.innerHTML = MINE
-        elCell.classList.add('selected2')
+        elCell.classList.add('mine')
         cell.isShown = true
       }
     }
@@ -438,24 +418,35 @@ function onCellMarked(event, i, j) {
 
   if (!gGame.isOn) return
 
-  if (cell.isShown && cell.isMine) return
+  if (cell.isShown) return
 
-  gGame.markedCount++
+  if (cell.isMarked) {
+    // console.log('UnMark')
+    if (cell.isMine) {
+      cell.isMine = true
+    }
+    gGame.markedCount--
+    gCounts--
+    cell.isMarked = false
+    elCell.innerHTML = EMPTY
+    elCell.classList.remove('marked')
 
-  if (cell.isMine) {
-    cell.isMine = false
-    console.log('Mark a Bomb')
-  }
-
-  if (!cell.isShown && gGame.markedCount <= gLevel.MINES + gLevel.BMARK) {
-    cell.isMarked = true
+    return
+  } else if (gGame.markedCount <= gLevel.MINES + gLevel.BMARK - 1) {
+    // console.log('Mark')
+    if (cell.isMine) {
+      // gCounts++
+      console.log('Mark a Mine')
+    }
+    gGame.markedCount++
     gCounts++
-
+    cell.isMarked = true
+    // cell.isMine = true
     elCell.innerHTML = MARK
     elCell.classList.add('marked')
-  } else {
-    return
   }
+
+  if (cell.isShown && cell.isMine) return
 
   if (gCounts === gLevel.SIZE * gLevel.SIZE) {
     gElTable.classList.add('win-container')
@@ -468,10 +459,11 @@ function onCellMarked(event, i, j) {
     playWin()
     gGame.isOn = false
   }
+  console.log('gCounts Mark:', gCounts)
+  // console.log('gGame.markedCount:', gGame.markedCount)
   return false
 }
 
-// Neg Overall Count
 function setMinesNegsCount(board) {
   var counter = 0
 
@@ -484,7 +476,7 @@ function setMinesNegsCount(board) {
         board[i][j].minesAroundCount = mineCount
       }
       if (mineCount === 0 && board[i][j].minesAroundCount === 0) {
-        board[i][j].minesAroundCount = EMPTY
+        board[i][j].minesAroundCount = 0
       }
       counter += mineCount
     }
@@ -507,6 +499,8 @@ function expandShown(board, elCell, i, j) {
           elNeighbor.innerHTML = currCell.minesAroundCount
           elNeighbor.classList.add('selected')
           if (currCell.minesAroundCount === 0) {
+            elCell.innerHTML = EMPTY
+            elNeighbor.innerHTML = EMPTY
             expandShown(board, elNeighbor, row, col)
           }
         }
@@ -584,6 +578,53 @@ function endTimer() {
   clearInterval(gIntervalId)
   gElMinutesContainer.innerText = 0
   gElSecondContainer.innerText = 0
+}
+
+playSoundBackGround()
+function playSoundBackGround() {
+  if (gAudio && !gAudio.paused) {
+    return
+  }
+
+  if (gAudio) {
+    gAudio.pause()
+    gAudio.currentTime = 0
+  }
+
+  gAudio = new Audio('sounds/SOUND_BY_ELIRAN_ZOHAR.wav')
+  gAudio.volume = 0.2
+  gAudio.loop = true
+  gAudio.play()
+}
+
+function playStart() {
+  var audio = new Audio('sounds/START.wav')
+  audio.volume = 0.3
+  audio.play()
+}
+
+function playHit() {
+  var audio = new Audio('sounds/HIT.wav')
+  audio.volume = 0.3
+  audio.play()
+}
+
+function playMine() {
+  var audio = new Audio('sounds/MINE.wav')
+  audio.volume = 0.3
+  audio.play()
+}
+
+function playLose() {
+  var audio = new Audio('sounds/LOSE.wav')
+  audio.volume = 0.5
+  audio.play()
+}
+
+function playWin() {
+  var audio = new Audio('sounds/WIN.wav')
+  audio.volume = 0.5
+  audio.play()
 }
 
 // ------------------------------------------------------

@@ -9,9 +9,10 @@
   </head>
 
   <body onload="onInit()">
-    <h4>Welcome To</h4>
-    <h1>🍌 MineJungleSweeper 🍌</h1>
-    <p></p>
+    <hgroup>
+      <p>Welcome To</p>
+      <h1>🍌 MineJungleSweeper 🍌</h1>
+    </hgroup>
 
     <div class="rules-container">
       <p>
@@ -19,29 +20,32 @@
         count in the board (+2 for Easy, +4 for Medium, +6 for Expert). You have 3 lives. 3 Safe Clicks. If you lose them, game over. 🐵 Please Read The Rules
         And Accept
       </p>
-      <button class="rules-btn" onclick="startGame()">Accept</button>
+      <button class="rules-btn" onclick="rulesStartGame()">Accept</button>
     </div>
 
     <h2>Timer: <span class="min">0</span>:<span class="sec">0</span></h2>
     <button class="restart-btn" onclick="onInit()">🐵</button>
     <h2>Mines:<span class="mine-count"></span></h2>
 
-    <table class="board-container">
-      <tbody class="board"></tbody>
-    </table>
-    <div class="life-container"></div>
-    <button onclick="safeClick()" class="safe-click-container"></button>
+    <div class="board-wrapper">
+      <table class="board-container">
+        <tbody class="board"></tbody>
+      </table>
+    </div>
 
-    <button class="diff" onclick="onSetLevel({ LEVEL: 'Easy', SIZE: 4, MINES: 2, BMARK: 2, LIFES: 3})">Easy 🙊</button>
-    <button class="diff" onclick="onSetLevel({ LEVEL: 'Medium', SIZE: 8, MINES: 14, BMARK: 4, LIFES: 3})">Medium 🙉</button>
-    <button class="diff" onclick="onSetLevel({ LEVEL: 'Expert', SIZE: 12, MINES: 32, BMARK: 6,  LIFES: 3})">Expert 🙈</button>
-    <div onclick="onHintMine()" class="hint-container"></div>
+    <div class="life-container"></div>
+
+    <button onclick="safeClick()" class="btn-skill safe-click-container"></button>
+    <button class="btn-skill" onclick="onSetLevel({ LEVEL: 'Easy', SIZE: 4, MINES: 2, BMARK: 2, LIFES: 3})">Easy 🙊</button>
+    <button class="btn-skill" onclick="onSetLevel({ LEVEL: 'Medium', SIZE: 8, MINES: 14, BMARK: 4, LIFES: 3})">Medium 🙉</button>
+    <button class="btn-skill" onclick="onSetLevel({ LEVEL: 'Expert', SIZE: 12, MINES: 32, BMARK: 6,  LIFES: 3})">Expert 🙈</button>
+    <button onclick="onHintMine()" class="btn-skill hint-container"></button>
+
+    <footer>
+      <p>By Eliran Zohar</p>
+    </footer>
 
     <script src="js/utils.js"></script>
     <script src="js/game.js"></script>
-
-    <footer>
-      <h4>By Eliran Zohar</h4>
-    </footer>
   </body>
 </html>
